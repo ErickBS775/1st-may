@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Happy Birthday, Dya! 🌸</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #fce4ec;
+    }
+
+    /* ── PAGES ── */
+    .page {
+      position: fixed;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+      z-index: 1;
+    }
+    .page.active {
+      opacity: 1;
+      pointer-events: all;
+      z-index: 2;
+    }
+
+    /* Full-screen Canva image */
+    .page-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      background: #fce4ec;
+      display: block;
+    }
+
+    /* ── INTRO OVERLAY (page 0 only) ── */
+    .intro-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.4rem;
+    }
+
+    .btn-open {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.9rem 2.4rem;
+      background: rgba(255,255,255,0.85);
+      color: #c2637a;
+      border: 1.5px solid rgba(194, 99, 122, 0.45);
+      border-radius: 50px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.05rem;
+      font-style: italic;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 32px rgba(194,99,122,0.18);
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .btn-open:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 40px rgba(194,99,122,0.28);
+      background: rgba(255,255,255,0.95);
+    }
+    .btn-open:active { transform: translateY(0); }
+
+    .hint-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #c2637a;
+      opacity: 0.55;
+    }
+
+    /* ── NAV ARROW ── */
+    #nav-btn {
+      position: fixed;
+      bottom: 1.8rem;
+      right: 1.8rem;
+      z-index: 100;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.7);
+      border: 1.5px solid rgba(194,99,122,0.35);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(194,99,122,0.2);
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      color: #c2637a;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    #nav-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 8px 28px rgba(194,99,122,0.35);
+    }
+    #nav-btn.visible { display: flex; }
+
+    /* ── PROGRESS DOTS ── */
+    #dots {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      gap: 7px;
+      z-index: 100;
+    }
+    #dots.visible { display: flex; }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(194,99,122,0.25);
+      transition: background 0.3s, transform 0.3s;
+    }
+    .dot.active {
+      background: #c2637a;
+      transform: scale(1.4);
+    }
+
+    /* ── MUSIC INDICATOR ── */
+    #music-btn {
+      position: fixed;
+      top: 1rem; right: 1.2rem;
+      z-index: 200;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(194,99,122,0.3);
+      border-radius: 50px;
+      padding: 0.35rem 0.85rem;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      color: #c2637a;
+      backdrop-filter: blur(8px);
+      cursor: pointer;
+    }
+    #music-btn.visible { display: flex; }
+    .bars { display: flex; align-items: flex-end; gap: 2px; height: 12px; }
+    .bar {
+      width: 3px; background: #c2637a; border-radius: 2px;
+      animation: bar-bounce 0.7s ease-in-out infinite alternate;
+    }
+    .bar:nth-child(1){ height:5px;  animation-delay:0s; }
+    .bar:nth-child(2){ height:11px; animation-delay:0.15s; }
+    .bar:nth-child(3){ height:7px;  animation-delay:0.3s; }
+    .bar:nth-child(4){ height:12px; animation-delay:0.08s; }
+    #music-btn.paused .bar { animation-play-state: paused; opacity: 0.35; }
+    @keyframes bar-bounce {
+      from { transform: scaleY(0.4); }
+      to   { transform: scaleY(1); }
+    }
+
+    /* ── CONFETTI ── */
+    #confetti-canvas {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 50;
+      opacity: 0; transition: opacity 0.4s;
+    }
+    #confetti-canvas.active { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <audio id="bgm" loop preload="auto">
+    <source src="music/song.mp3" type="audio/mpeg"/>
+  </audio>
+
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- MUSIC BUTTON -->
+  <div id="music-btn" onclick="toggleMusic()">
+    <div class="bars">
+      <div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div>
+    </div>
+    <span>♪ Everywhere, Everything</span>
+  </div>
+
+  <!-- PAGE 0: Canva 1.png + open button overlay -->
+  <div class="page active" id="page-0">
+    <img class="page-img" src="images/1.png" alt=""/>
+    <div class="intro-overlay">
+      <button class="btn-open" onclick="startJourney()">
+        ✉ &nbsp;Open Your Letter
+      </button>
+      <span class="hint-text">tap to begin · music will play</span>
+    </div>
+  </div>
+
+  <!-- PAGES 1–5: Canva slides 2–6 -->
+  <div class="page" id="page-1"><img class="page-img" src="images/2.png" alt="Happy Birthday Dya"/></div>
+  <div class="page" id="page-2"><img class="page-img" src="images/3.png" alt="Letter page 1"/></div>
+  <div class="page" id="page-3"><img class="page-img" src="images/4.png" alt="Letter page 2"/></div>
+  <div class="page" id="page-4"><img class="page-img" src="images/5.png" alt="Letter page 3"/></div>
+  <div class="page" id="page-5"><img class="page-img" src="images/6.png" alt="Letter page 4"/></div>
+
+  <!-- NAV -->
+  <button id="nav-btn" onclick="nextPage()">→</button>
+
+  <!-- DOTS -->
+  <div id="dots">
+    <div class="dot active"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+
+  <script>
+    const TOTAL = 5;
+    let current = 0;
+    let musicPlaying = false;
+
+    const audio    = document.getElementById('bgm');
+    const musicBtn = document.getElementById('music-btn');
+    const navBtn   = document.getElementById('nav-btn');
+    const dotsEl   = document.getElementById('dots');
+    const dotEls   = document.querySelectorAll('.dot');
+
+    function startJourney() {
+      audio.play()
+        .then(() => {
+          musicPlaying = true;
+          musicBtn.classList.add('visible');
+          fadeVolume(0, 0.75);
+        })
+        .catch(() => {
+          document.addEventListener('click', retryMusic, { once: true });
+        });
+      goToPage(1);
+    }
+
+    function retryMusic() {
+      audio.play().then(() => {
+        musicPlaying = true;
+        musicBtn.classList.add('visible');
+        fadeVolume(0, 0.75);
+      }).catch(() => {});
+    }
+
+    function fadeVolume(from, to) {
+      audio.volume = from;
+      const step = (to - from) / 30;
+      let v = from;
+      const t = setInterval(() => {
+        v = Math.min(v + step, to);
+        audio.volume = v;
+        if (v >= to) clearInterval(t);
+      }, 60);
+    }
+
+    function toggleMusic() {
+      if (musicPlaying) {
+        audio.pause();
+        musicPlaying = false;
+        musicBtn.classList.add('paused');
+      } else {
+        audio.play();
+        musicPlaying = true;
+        musicBtn.classList.remove('paused');
+      }
+    }
+
+    function goToPage(n) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + n).classList.add('active');
+      current = n;
+
+      if (n >= 1) {
+        dotsEl.classList.add('visible');
+        dotEls.forEach((d, i) => d.classList.toggle('active', i === n - 1));
+      }
+
+      if (n >= 1 && n < TOTAL) {
+        navBtn.classList.add('visible');
+      } else if (n === TOTAL) {
+        navBtn.classList.remove('visible');
+        confetti();
+      }
+    }
+
+    function nextPage() {
+      if (current < TOTAL) goToPage(current + 1);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        if (current === 0) startJourney();
+        else nextPage();
+      }
+    });
+
+    // ── CONFETTI ──
+    function confetti() {
+      const cv = document.getElementById('confetti-canvas');
+      cv.classList.add('active');
+      cv.width = window.innerWidth;
+      cv.height = window.innerHeight;
+      const ctx = cv.getContext('2d');
+      const colors = ['#f4a6bc','#e8829a','#ffd6e0','#ffffff','#f9bdd0','#f06292'];
+      const pts = Array.from({length: 110}, () => ({
+        x: Math.random() * cv.width,
+        y: Math.random() * -cv.height,
+        r: 4 + Math.random() * 5,
+        d: Math.random() * 100,
+        c: colors[Math.random() * colors.length | 0],
+        ta: 0, ts: 0.05 + Math.random() * 0.08
+      }));
+      let ang = 0, raf;
+      (function draw() {
+        ctx.clearRect(0, 0, cv.width, cv.height);
+        ang += 0.01;
+        pts.forEach(p => {
+          p.ta += p.ts;
+          p.y += (Math.cos(ang + p.d) + 2.8) * 1.1;
+          p.x += Math.sin(ang) * 1.2;
+          const tilt = Math.sin(p.ta) * 11;
+          ctx.beginPath();
+          ctx.lineWidth = p.r / 2;
+          ctx.strokeStyle = p.c;
+          ctx.moveTo(p.x + tilt + p.r / 4, p.y);
+          ctx.lineTo(p.x + tilt, p.y + p.r / 4);
+          ctx.stroke();
+        });
+        if (pts.some(p => p.y < cv.height + 20)) {
+          raf = requestAnimationFrame(draw);
+        } else {
+          cv.classList.remove('active');
+        }
+      })();
+      setTimeout(() => { cancelAnimationFrame(raf); cv.classList.remove('active'); }, 5500);
+    }
+  </script>
+</body>
+</html>
